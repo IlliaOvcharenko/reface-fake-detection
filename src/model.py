@@ -5,6 +5,38 @@ import cv2
 import numpy as np
 import pytorch_lightning as pl
 
+from efficientnet_pytorch import EfficientNet
+
+class VideoFramesJoint(torch.nn.Module):
+    def __init__(self, model_name="efficientnet-b0", in_channels=12, num_classes=2):
+        super().__init__()
+
+        self.encoder = EfficientNet.from_pretrained(model_name, in_channels=3)
+        layers_to_remove = ["_fc", "_swish"]
+        for l in layers_to_remove:
+            setattr(self.encoder, l, torch.nn.Identity())
+
+        self.in_images = in_channels // 3
+        self.head = torch.nn.Sequential(
+            torch.nn.Linear(self.in_images * 1280, 512),
+            torch.nn.BatchNorm1d(512),
+            torch.nn.ReLU(),
+            torch.nn.Linear(512, 128),
+            torch.nn.BatchNorm1d(128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, num_classes)
+        )
+
+    def forward(self, x):
+        encoded = []
+        for i in range(self.in_images):
+            img = x[:, i*3:i*3+3, :, :]
+            encoded.append(self.encoder(img))
+
+        features = torch.cat(encoded, 1)
+        out = self.head(features)
+        return out
+
 
 class ImageStackClassificationModel(pl.LightningModule):
     # TODO why models_kwargs (not just model_kwargs)
