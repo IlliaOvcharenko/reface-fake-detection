@@ -42,11 +42,11 @@ def load_splits(folds_folder, val_folds=[0], train_folds=None):
 
     if val_folds is None:
         train_folds = [f for f in folds if f not in train_folds]
-
+    # print(val_folds, train_folds)
     val = pd.concat([pd.read_csv(folds_folder / f"fold_{fi}.csv") for fi in val_folds])
     train = pd.concat([pd.read_csv(folds_folder / f"fold_{fi}.csv") for fi in train_folds])
-    val = val.reset_index()
-    train = train.reset_index()
+    val = val.reset_index(drop=True)
+    train = train.reset_index(drop=True)
     return train, val
 
 

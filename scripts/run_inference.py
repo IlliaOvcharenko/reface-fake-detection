@@ -45,34 +45,34 @@ def predict_with_dataloader(expr, dataloader):
     return result_df
 
 
-def main():
-    data_folder = Path("data")
-    models_folder = Path("models")
-    preds_folder = Path("preds")
+def main(
+    model_ckpt_fn,
+    save_preds_fn,
+):
     expr = ImageStackClassificationModel.load_from_checkpoint(
-        models_folder / "epoch=182-step=47213-val_f1=0.8153.ckpt"
+        model_ckpt_fn,
     )
 
-    test_folder = data_folder / "faces" / "test"
+    data_folder = Path("data")
+    test_folder = data_folder / "frames" / "test"
     test_df = pd.DataFrame({"filename": [f"{fn.stem}.mp4" for fn in  test_folder.glob("*")]})
-    # print(test_df)
+
     test_dataset = ImageStackDataset(
         test_df, test_folder,
         "test",
-        image_to_std_tensor,
-        resize=(128, 128),
+        A.Compose([A.Resize(256, 256), image_to_std_tensor]),
+        resize=None,
     )
     test_dataloader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=256,
+        batch_size=128,
         shuffle=False,
         num_workers=6
     )
 
     test_preds_df = predict_with_dataloader(expr, test_dataloader)
-    # print(test_preds_df.shape)
     test_preds_df["label"] = test_preds_df["label"].astype(int)
-    test_preds_df.to_csv(preds_folder / "submission-faces.csv", index=False)
+    test_preds_df.to_csv(save_preds_fn, index=False)
 
 
 

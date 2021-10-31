@@ -29,26 +29,14 @@ from src.utils import (MEAN, STD,
                        load_splits)
 
 
-# def test_dataset():
-#     df = pd.read_csv("data/train.csv")
-#     ds = ImageStackDataset(df, Path("data/frames/train"), "train",
-#                            A.Compose([A.Resize(128, 128),]))
-#     print(ds[0])
-
-
-# def test_model():
-#     model = EfficientNet.from_pretrained('efficientnet-b0', in_channels=12, num_classes=2)
-#     print(model)
-
-
 def init_training(train_df, val_df, model_name):
 
     train_transform = A.Compose([
-        A.ShiftScaleRotate(shift_limit=0.1,
-                           scale_limit=0.05,
-                           rotate_limit=5,
-                           p=0.3,
-                           border_mode=1),
+        # A.ShiftScaleRotate(shift_limit=0.1,
+        #                    scale_limit=0.05,
+        #                    rotate_limit=5,
+        #                    p=0.3,
+        #                    border_mode=1),
         A.Resize(256, 256),
         A.HorizontalFlip(),
         A.RandomBrightnessContrast(),
@@ -91,7 +79,8 @@ def init_training(train_df, val_df, model_name):
 
         monitor="val_f1",
 
-        criterion=L.FocalLoss(),
+        # criterion=L.FocalLoss(),
+        criterion=torch.nn.CrossEntropyLoss(),
         metrics={
             "f1": f1_score_ravel,
         }
@@ -127,22 +116,20 @@ def init_training(train_df, val_df, model_name):
     trainer.fit(expr, dm)
 
 
-def init_training_with_folds():
-    n_folds = 4
-    folds_folder = Path("data/folds")
+def init_training_with_folds(
+        folds_folder
+):
+    folds_folder = Path(folds_folder)
+    n_folds = len(list(folds_folder.glob("*.csv")))
+    print(f"Folds folder: {folds_folder}, num folds: {n_folds}")
 
     for fold_idx in range(n_folds):
         print(f"Train fold: {fold_idx}")
         tr_df, val_df = load_splits(folds_folder, val_folds=fold_idx)
         model_name = f"fold-{fold_idx}"
-
         init_training(tr_df, val_df, model_name)
 
 
-def main():
-    init_training_with_folds()
-
-
 if __name__ == "__main__":
-    Fire(main)
+    Fire(init_training_with_folds)
 

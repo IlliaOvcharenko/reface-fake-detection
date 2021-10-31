@@ -60,18 +60,18 @@ def init_training():
         pd.read_csv(data_folder / "splits" / "train.csv"),
         data_folder / "frames" / "train",
         train_transform,
-        20,
-        {"resize": (256, 256)},
+        64,
+        {},
 
         pd.read_csv(data_folder / "splits" / "val.csv"),
         data_folder / "frames" / "train",
         val_test_transform,
-        40,
-        {"resize": (256, 256)},
+        128,
+        {},
     )
 
     expr = ImageStackClassificationModel(
-        VideoFramesJoint,
+        EfficientNet.from_pretrained,
         {"model_name": "efficientnet-b0", "in_channels": 12, "num_classes": 2},
 
         torch.optim.Adam,
@@ -82,8 +82,8 @@ def init_training():
 
 
         monitor="val_f1",
-        # criterion=torch.nn.CrossEntropyLoss(),
-        criterion=L.FocalLoss(),
+        criterion=torch.nn.CrossEntropyLoss(),
+        # criterion=L.FocalLoss(),
         metrics={
             "f1": f1_score_ravel,
         }
@@ -106,7 +106,7 @@ def init_training():
     trainer = pl.Trainer(
         callbacks=[checkpoint_callback, lr_logger],
         gpus=1,
-        max_epochs=500,
+        max_epochs=300,
         deterministic=True,
 
         logger=tb_logger,

@@ -10,6 +10,10 @@ models/*
 logs/*
 !logs/.gitkeep
 
+# Preds
+preds/*
+!preds/.gitkeep
+
 # Archive folder
 archive/
 

@@ -25,32 +25,34 @@ def stratified_k_fold(
     for _, test_indexes in stratifier.split(X, y):
         folds.append(X.iloc[test_indexes])
 
-
     folds = [pd.DataFrame(fold, columns=description.columns) for fold in folds]
     return folds
 
 
 def main(
+    folds_folder,
     mode,
+    n_folds=5,
 ):
     assert mode in ["create", "test"], f"No such mode as: {mode}"
 
     if mode == "create":
 
+        n_folds = 5
         df_fn = Path("data/train.csv")
         df = pd.read_csv(df_fn)
 
+        df = df.sample(frac=1).reset_index(drop=True)
+        folds = stratified_k_fold(df, n_folds, "label", random_state=42)
 
-        folds = stratified_k_fold(df, 4, "label", random_state=42)
-
-        folds_folder = Path("data/folds")
+        folds_folder = Path(folds_folder)
         for idx, fold in enumerate(folds):
             fold_filename =  folds_folder / f"fold_{idx}.csv"
             fold.to_csv(fold_filename, index=False)
 
     elif mode == "test":
-        folds_folder = Path("data/folds")
-        for i in range(4):
+        folds_folder = Path(folds_folder)
+        for i in range(n_folds):
             tr_df, val_df = load_splits(folds_folder, val_folds=i)
             print(f"fold: {i}")
             print(f"train split: {tr_df.shape}, target: {tr_df['label'].sum() / len(tr_df)}")
